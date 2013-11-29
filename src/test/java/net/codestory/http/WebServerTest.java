@@ -15,10 +15,14 @@
  */
 package net.codestory.http;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.restassured.RestAssured;
 import net.codestory.http.annotations.Get;
 import net.codestory.http.annotations.Post;
 import net.codestory.http.annotations.Produces;
+import net.codestory.http.annotations.Put;
 import net.codestory.http.errors.NotFoundException;
 import net.codestory.http.filters.basic.BasicAuthFilter;
 import net.codestory.http.injection.Singletons;
@@ -294,7 +298,7 @@ public class WebServerTest {
     }
 
     @Test
-    public void support_post() {
+    public void support_post() throws Exception{
         server.configure(routes -> {
             routes.post("/post", () -> "Done");
             routes.get("/get", () -> "Done");
@@ -321,6 +325,7 @@ public class WebServerTest {
         get("/action").produces("Done GET");
         post("/person").produces("CREATED");
         post("/order/12", "name", "Book", "quantity", "42").produces("order 12 : 42xBook");
+        post("/order/12", "{\"name\":\"foo\",\"quantity\":12}").produces("order 12 : 42xBook");
         post("/get").produces(405);
         post("/index.html").produces(405);
         post("/unknown").produces(404);
@@ -328,11 +333,20 @@ public class WebServerTest {
 
     @Test
     public void support_put() {
-        server.configure(routes -> routes.put("/put", () -> "Done"));
-        server.configure(routes -> routes.put("/putText", (Context context) -> context.payload()));
+        server.configure( routes -> {
+                    routes.put("/put", () -> "Done");
+                    routes.put("/putText", (Context context) -> context.payload());
+                    routes.add(new Object() {
+                            @Put("/order/:id")
+                            public String order(String id, Order order) {
+                                return "order " + id + " : " + order.quantity + "x" + order.name;
+                            }
+                    });
+                });
 
         put("/put").produces("Done");
         put("/putText", "PAYLOAD").produces("PAYLOAD");
+        put("/order/12","{\"name\":\"foo\",\"quantity\":12}").produces("order 12 : 42xBook");
     }
 
     @Test
@@ -404,14 +418,14 @@ public class WebServerTest {
     @Test
     public void basicAuth() {
         server.configure(routes -> {
-            routes.filter(new BasicAuthFilter("/secure", "codestory", of("jl","polka")));
+            routes.filter(new BasicAuthFilter("/secure", "codestory", of("jl", "polka")));
             routes.get("/", "Hello World");
             routes.get("/secure", "Secured Hello World");
         });
 
         get("/").produces(200, "text/html", "Hello World");
         get("/secure").produces(401);
-        get("/secure").producesHeader("WWW-Authenticate","Basic realm=\"codestory\"");
+        get("/secure").producesHeader("WWW-Authenticate", "Basic realm=\"codestory\"");
         RestAssured.given().port(server.port())
                 .auth().preemptive().basic("jl", "polka")
                 .expect()
