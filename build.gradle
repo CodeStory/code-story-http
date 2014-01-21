@@ -1,0 +1,131 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+group = 'net.code-story'
+version = '1.28-SNAPSHOT'
+description = 'CodeStory - Http Server'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  compile 'org.simpleframework:simple:5.1.6'
+  compile 'com.github.sommeri:less4j:1.2.4'
+  compile 'org.commonjava.googlecode.markdown4j:markdown4j:2.2-cj-1.0'
+  compile 'org.yaml:snakeyaml:1.13'
+  compile 'com.fasterxml.jackson.core:jackson-databind:2.3.1'
+  compile 'org.slf4j:slf4j-api:1.7.5'
+  compile 'ch.qos.logback:logback-classic:1.0.13'
+
+  compile('com.github.jknack:handlebars:1.2.1') {
+    exclude(module: 'slf4j-api')
+  }
+
+  // optional
+  compile 'org.twitter4j:twitter4j-core:3.0.5'
+
+  // optional
+  compile 'com.google.inject:guice:3.0'
+
+  testCompile 'org.codehaus.groovy:groovy-all:2.2.0'
+  testCompile 'junit:junit:4.11'
+  testCompile 'org.mockito:mockito-core:1.9.5'
+  testCompile 'org.assertj:assertj-core:1.5.0'
+  testCompile 'com.jayway.restassured:rest-assured:2.2.0'
+  testCompile 'com.github.stefanbirkner:system-rules:1.4.0'
+  testCompile 'com.googlecode.catch-exception:catch-exception:1.2.0'
+  testCompile 'org.webjars:bootstrap:3.0.3'
+}
+
+test {
+  maxParallelForks = 2
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+  classifier = 'sources'
+  from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+  classifier = 'javadoc'
+  from javadoc.destinationDir
+}
+
+artifacts {
+  archives jar
+  archives javadocJar
+  archives sourcesJar
+}
+
+signing {
+  sign configurations.archives
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+      repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+        authentication(userName: sonatypeUsername, password: sonatypePassword)
+      }
+
+      pom.project {
+        name 'http'
+        packaging 'jar'
+        description 'This is the simplest fastest full fledged http server we could come up with'
+        url 'https://github.com/CodeStory/code-story-http'
+
+        scm {
+          url 'scm:git:git@github.com:CodeStory/code-story-http.git'
+          connection 'scm:git:git@github.com:CodeStory/code-story-http.git'
+          developerConnection 'scm:git:git@github.com:CodeStory/code-story-http.git'
+        }
+
+        licenses {
+          license {
+            name 'The Apache Software License, Version 2.0'
+            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+            distribution 'repo'
+          }
+        }
+      }
+    }
+  }
+}
+
+// http://yennicktrevels.com/blog/2013/10/11/automated-gradle-project-deployment-to-sonatype-oss-repository/
+
+//  </profiles>
+//      <plugin>
+//        <inherited>false</inherited>
+//        <groupId>com.mycila.maven-license-plugin</groupId>
+//        <artifactId>maven-license-plugin</artifactId>
+//        <version>1.9.0</version>
+//        <configuration>
+//          <header>${project.basedir}/LICENSE</header>
+//          <failIfMissing>true</failIfMissing>
+//          <strictCheck>true</strictCheck>
+//          <aggregate>true</aggregate>
+//          <includes>
+//            <include>**/*.java</include>
+//          </includes>
+//          <mapping>
+//            <java>JAVADOC_STYLE</java>
+//          </mapping>
+//        </configuration>
+//        <executions>
+//          <execution>
+//            <id>enforce-license-headers</id>
+//            <phase>validate</phase>
+//            <goals>
+//              <goal>check</goal>
+//            </goals>
+//          </execution>
+//        </executions>
+//      </plugin>
