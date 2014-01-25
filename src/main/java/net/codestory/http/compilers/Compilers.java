@@ -15,6 +15,7 @@
  */
 package net.codestory.http.compilers;
 
+import static java.nio.charset.StandardCharsets.*;
 import static net.codestory.http.misc.MemoizingSupplier.*;
 
 import java.io.*;
@@ -22,6 +23,8 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
+
+import net.codestory.http.misc.*;
 
 public enum Compilers {
   INSTANCE;
@@ -47,9 +50,24 @@ public enum Compilers {
   }
 
   public String compile(Path path, String content) {
-    return cache.computeIfAbsent(path.toString() + ";" + content, (ignore) -> {
+    return cache.computeIfAbsent(path.toString() + ";" + content, (key) -> {
       try {
-        return doCompile(path, content);
+        String sha1 = Sha1.of(key);
+
+        File file = new File("/Users/dgageot/.code-story/.cache/" + sha1);
+        if (file.exists()) {
+          return new String(Files.readAllBytes(file.toPath()), UTF_8);
+        }
+
+        if (!file.getParentFile().mkdirs()) {
+          if (!file.getParentFile().exists()) {
+            throw new IllegalStateException("Unable to create cache folder " + file.getParentFile());
+          }
+        }
+
+        String compiled = doCompile(path, content);
+        Files.write(file.toPath(), compiled.getBytes(UTF_8));
+        return compiled;
       } catch (IOException e) {
         throw new IllegalStateException(e);
       }
