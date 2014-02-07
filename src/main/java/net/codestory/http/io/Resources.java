@@ -23,6 +23,8 @@ import java.net.*;
 import java.nio.charset.*;
 import java.nio.file.*;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import net.codestory.http.misc.*;
 import net.codestory.http.types.*;
@@ -58,7 +60,9 @@ public class Resources {
   }
 
   public static String relativePath(Path parent, Path path) {
-    return parent.relativize(path).toString();
+    return StreamSupport.stream(parent.relativize(path).spliterator(), false)
+            .map(Path::toString)
+            .collect(Collectors.joining("/"));
   }
 
   public static boolean isPublic(Path path) {

@@ -19,6 +19,10 @@ import static java.nio.charset.StandardCharsets.*;
 
 import java.io.*;
 import java.nio.file.*;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import net.codestory.http.io.*;
 
@@ -27,10 +31,16 @@ import com.github.sommeri.less4j.*;
 class PathSource extends LessSource {
   private final Path path;
   private final String content;
+  private final String name;
 
   PathSource(Path path, String content) {
     this.path = path;
     this.content = content;
+    String prefix = "/";
+    if (path.equals(path.getFileName())) {
+      prefix = "";
+    }
+    this.name = StreamSupport.stream(path.spliterator(), false).map(Path::toString).collect(Collectors.joining("/", prefix, ""));
   }
 
   @Override
@@ -51,7 +61,7 @@ class PathSource extends LessSource {
 
   @Override
   public String getName() {
-    return path.toString();
+    return name;
   }
 
   @Override
