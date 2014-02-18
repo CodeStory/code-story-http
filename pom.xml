@@ -112,6 +112,14 @@
           <version>1.4</version>
         </plugin>
         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-scm-plugin</artifactId>
+          <version>1.9</version>
+          <configuration>
+            <message>Update Documentation</message>
+          </configuration>
+        </plugin>
+        <plugin>
           <groupId>com.google.code.maven-replacer-plugin</groupId>
           <artifactId>replacer</artifactId>
           <version>1.5.2</version>
