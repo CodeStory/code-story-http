@@ -104,15 +104,6 @@
           <version>3.3</version>
         </plugin>
         <plugin>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.16</version>
-          <configuration>
-            <systemProperties>
-              <java.awt.headless>true</java.awt.headless>
-            </systemProperties>
-          </configuration>
-        </plugin>
-        <plugin>
           <artifactId>maven-source-plugin</artifactId>
           <version>2.2.1</version>
         </plugin>
@@ -120,9 +111,41 @@
           <artifactId>maven-gpg-plugin</artifactId>
           <version>1.4</version>
         </plugin>
+        <plugin>
+          <groupId>com.google.code.maven-replacer-plugin</groupId>
+          <artifactId>replacer</artifactId>
+          <version>1.5.2</version>
+          <configuration>
+            <file>${basedir}/README.markdown</file>
+            <ignoreMissingFile>false</ignoreMissingFile>
+            <regex>true</regex>
+            <regexFlags>
+              <regexFlag>MULTILINE</regexFlag>
+            </regexFlags>
+            <token>(&lt;artifactId&gt;http&lt;/artifactId&gt;)(.*${line.separator}.*)(&lt;version&gt;)(.*)(&lt;/version&gt;)</token>
+            <value>$1$2$3${project.version}$5</value>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.4.2</version>
+        <configuration>
+          <preparationGoals>com.google.code.maven-replacer-plugin:replacer:replace</preparationGoals>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.16</version>
+        <configuration>
+          <systemProperties>
+            <java.awt.headless>true</java.awt.headless>
+          </systemProperties>
+        </configuration>
+      </plugin>
       <plugin>
         <artifactId>maven-source-plugin</artifactId>
         <executions>
