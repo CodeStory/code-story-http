@@ -112,7 +112,6 @@
           <version>1.4</version>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-scm-plugin</artifactId>
           <version>1.9</version>
           <configuration>
@@ -143,6 +142,7 @@
         <version>2.4.2</version>
         <configuration>
           <preparationGoals>com.google.code.maven-replacer-plugin:replacer:replace</preparationGoals>
+          <goals>maven-scm-plugin:checkin deploy</goals>
           <pushChanges>false</pushChanges>
         </configuration>
       </plugin>
