@@ -44,11 +44,11 @@ public class Context {
   }
 
   public String uri() {
-    return request.getPathInfo();
+    return request.getRequestURI();
   }
 
   public Cookie cookie(String name) {
-    return Arrays.stream(request.getCookies()).filter(cookie -> name.equals(cookie.getName())).findFirst().orElse(null);
+    return cookies().stream().filter(cookie -> name.equals(cookie.getName())).findFirst().orElse(null);
   }
 
   public String cookieValue(String name) {
@@ -89,6 +89,9 @@ public class Context {
   }
 
   public List<Cookie> cookies() {
+    if (request.getCookies() == null || request.getCookies().length == 0) {
+      return new ArrayList<>();
+    }
     return Arrays.asList(request.getCookies());
   }
 
