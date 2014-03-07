@@ -19,33 +19,36 @@ import static net.codestory.http.constants.Headers.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import net.codestory.http.convert.*;
 import net.codestory.http.injection.*;
 import net.codestory.http.io.*;
 
-import org.simpleframework.http.*;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 
 public class Context {
-  private final Request request;
-  private final Response response;
+  private final HttpServletRequest request;
+  private final HttpServletResponse response;
   private final IocAdapter iocAdapter;
-  private final Query query;
   private String currentUser;
 
-  public Context(Request request, Response response, IocAdapter iocAdapter) {
+  public Context(HttpServletRequest request, HttpServletResponse response, IocAdapter iocAdapter) {
     this.request = request;
     this.response = response;
     this.iocAdapter = iocAdapter;
-    this.query = request.getQuery();
   }
 
   public String uri() {
-    return request.getPath().getPath();
+    return request.getPathInfo();
   }
 
   public Cookie cookie(String name) {
-    return request.getCookie(name);
+    return Arrays.stream(request.getCookies()).filter(cookie -> name.equals(cookie.getName())).findFirst().orElse(null);
   }
 
   public String cookieValue(String name) {
@@ -86,35 +89,35 @@ public class Context {
   }
 
   public List<Cookie> cookies() {
-    return request.getCookies();
+    return Arrays.asList(request.getCookies());
   }
 
   public String get(String name) {
-    return query.get(name);
+    return request.getParameter(name);
   }
 
   public List<String> getAll(String name) {
-    return query.getAll(name);
+    return Arrays.asList(request.getParameterValues(name));
   }
 
   public int getInteger(String name) {
-    return query.getInteger(name);
+    return Integer.parseInt(request.getParameter(name));
   }
 
   public float getFloat(String name) {
-    return query.getFloat(name);
+    return Float.parseFloat(request.getParameter(name));
   }
 
   public boolean getBoolean(String name) {
-    return query.getBoolean(name);
+    return Boolean.parseBoolean(request.getParameter(name));
   }
 
   public String getHeader(String name) {
-    return request.getValue(name);
+    return request.getHeader(name);
   }
 
   public List<String> getHeaders(String name) {
-    return request.getValues(name);
+    return Collections.list(request.getHeaders(name));
   }
 
   public String method() {
@@ -122,19 +125,22 @@ public class Context {
   }
 
   public Map<String, String> keyValues() {
-    return query;
+    return Collections.list(request.getParameterNames()).stream().collect(Collectors.toMap(
+            Function.identity(),
+            name -> request.getParameter(name)
+    ));
   }
 
   public String getClientAddress() {
     String forwarded = getHeader(X_FORWARDED_FOR);
-    return (forwarded != null) ? forwarded : request.getClientAddress().toString();
+    return (forwarded != null) ? forwarded : request.getRemoteAddr();
   }
 
-  public Request request() {
+  public HttpServletRequest request() {
     return request;
   }
 
-  public Response response() {
+  public HttpServletResponse response() {
     return response;
   }
 

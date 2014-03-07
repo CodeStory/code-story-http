@@ -23,19 +23,24 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
+import net.codestory.http.constants.HttpStatus;
 import net.codestory.http.internal.*;
 
 import org.junit.*;
-import org.simpleframework.http.*;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
 
 public class PayloadTest {
   Context context = mock(Context.class);
-  Response response = mock(Response.class);
+  HttpServletResponse response = mock(HttpServletResponse.class);
 
   @Before
   public void setupContext() throws IOException {
     when(context.response()).thenReturn(response);
-    when(response.getOutputStream()).thenReturn(new ByteArrayOutputStream());
+    when(response.getOutputStream()).thenReturn(mock(ServletOutputStream.class));
   }
 
   @Test
@@ -94,7 +99,7 @@ public class PayloadTest {
     Payload payload = new Payload("text/plain", Optional.empty());
     payload.writeTo(context);
 
-    verify(response).setStatus(Status.NOT_FOUND);
+    verify(response).setStatus(HttpStatus.NOT_FOUND);
     verify(response).setContentLength(0);
     verifyNoMoreInteractions(response);
   }
@@ -104,8 +109,8 @@ public class PayloadTest {
     Payload payload = Payload.seeOther("/url");
     payload.writeTo(context);
 
-    verify(response).setValue("Location", "/url");
-    verify(response).setStatus(Status.SEE_OTHER);
+    verify(response).setHeader("Location", "/url");
+    verify(response).setStatus(HttpStatus.SEE_OTHER);
     verify(response).setContentLength(0);
     verifyNoMoreInteractions(response);
   }
@@ -115,7 +120,7 @@ public class PayloadTest {
     Payload payload = Payload.forbidden();
     payload.writeTo(context);
 
-    verify(response).setStatus(Status.FORBIDDEN);
+    verify(response).setStatus(HttpStatus.FORBIDDEN);
     verify(response).setContentLength(0);
     verifyNoMoreInteractions(response);
   }
@@ -125,8 +130,8 @@ public class PayloadTest {
     Payload payload = Payload.movedPermanently("/url");
     payload.writeTo(context);
 
-    verify(response).setValue("Location", "/url");
-    verify(response).setStatus(Status.MOVED_PERMANENTLY);
+    verify(response).setHeader("Location", "/url");
+    verify(response).setStatus(HttpStatus.MOVED_PERMANENTLY);
     verify(response).setContentLength(0);
     verifyNoMoreInteractions(response);
   }
@@ -136,7 +141,7 @@ public class PayloadTest {
     Payload payload = new Payload(Paths.get("hello.md"));
     payload.writeTo(context);
 
-    verify(response).setValue(eq("Last-Modified"), anyString());
+    verify(response).setHeader(eq("Last-Modified"), anyString());
   }
 
   @Test
@@ -183,8 +188,8 @@ public class PayloadTest {
     Payload payload = new Payload("Hello");
     payload.writeTo(context);
 
-    verify(response).setStatus(Status.OK);
-    verify(response).setValue("ETag", "8b1a9953c4611296a827abf8c47804d7");
+    verify(response).setStatus(HttpStatus.OK);
+    verify(response).setHeader("ETag", "8b1a9953c4611296a827abf8c47804d7");
   }
 
   @Test
@@ -194,7 +199,7 @@ public class PayloadTest {
     Payload payload = new Payload("Hello");
     payload.writeTo(context);
 
-    verify(response).setStatus(Status.NOT_MODIFIED);
+    verify(response).setStatus(HttpStatus.NOT_MODIFIED);
   }
 
   @Test
@@ -204,7 +209,7 @@ public class PayloadTest {
     Payload payload = new Payload("Hello");
     payload.writeTo(context);
 
-    verify(response).setStatus(Status.OK);
+    verify(response).setStatus(HttpStatus.OK);
     verify(response, never()).setContentLength(anyInt());
     verify(response, never()).getOutputStream();
   }

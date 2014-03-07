@@ -29,19 +29,27 @@ import net.codestory.http.reload.*;
 import net.codestory.http.routes.*;
 import net.codestory.http.ssl.*;
 
-import org.simpleframework.http.*;
-import org.simpleframework.http.core.*;
-import org.simpleframework.transport.*;
-import org.simpleframework.transport.connect.*;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.FilterHolder;
+import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.slf4j.*;
 
 import javax.net.ssl.*;
+import javax.servlet.DispatcherType;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-public class WebServer {
+public class WebServer implements Filter {
   private final static Logger LOG = LoggerFactory.getLogger(WebServer.class);
 
-  private final Server server;
-  private final SocketConnection connection;
+  private Server server;
   private RoutesProvider routesProvider;
   private int port;
 
@@ -51,12 +59,6 @@ public class WebServer {
   }
 
   public WebServer(Configuration configuration) {
-    try {
-      server = new ContainerServer(this::handle);
-      connection = new SocketConnection(server);
-    } catch (IOException e) {
-      throw new IllegalStateException("Unable to create http server", e);
-    }
     configure(configuration);
   }
 
@@ -109,7 +111,14 @@ public class WebServer {
     try {
       this.port = Env.INSTANCE.overriddenPort(port);
 
-      connection.connect(new InetSocketAddress(this.port), context);
+      server = new Server(this.port);
+
+      ServletContextHandler servletHandler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
+      servletHandler.addFilter(new FilterHolder(this), "/*", EnumSet.of(DispatcherType.REQUEST));
+
+      server.setHandler(servletHandler);
+
+      server.start();
 
       LOG.info("Server started on port {}", this.port);
     } catch (RuntimeException e) {
@@ -135,33 +144,8 @@ public class WebServer {
   public void stop() {
     try {
       server.stop();
-    } catch (IOException e) {
-      throw new IllegalStateException("Unable to stop the web server", e);
-    }
-  }
-
-  void handle(Request request, Response response) {
-    Context context = null;
-
-    try {
-      RouteCollection routes = routesProvider.get();
-      context = new Context(request, response, routes.getIocAdapter());
-
-      applyRoutes(routes, context);
     } catch (Exception e) {
-      if (context == null) {
-        // Didn't manage to initialize a full context
-        // because the routes failed to load
-        //
-        context = new Context(request, response, null);
-      }
-      handleServerError(context, e);
-    } finally {
-      try {
-        response.close();
-      } catch (IOException e) {
-        // Ignore
-      }
+      throw new IllegalStateException("Unable to stop the web server", e);
     }
   }
 
@@ -197,5 +181,42 @@ public class WebServer {
   protected Payload errorPage(Payload payload, Exception e) {
     Exception shownError = Env.INSTANCE.prodMode() ? null : e;
     return new ErrorPage(payload, shownError).payload();
+  }
+
+  @Override
+  public void init(FilterConfig filterConfig) throws ServletException {
+    // TODO, call spec class no init routes of user.
+  }
+
+  @Override
+  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+
+    Context context = null;
+
+    try {
+      RouteCollection routes = routesProvider.get();
+      context = new Context((HttpServletRequest)request, (HttpServletResponse)response, routes.getIocAdapter());
+
+      applyRoutes(routes, context);
+    } catch (Exception e) {
+      if (context == null) {
+        // Didn't manage to initialize a full context
+        // because the routes failed to load
+        //
+        context = new Context((HttpServletRequest)request, (HttpServletResponse)response, null);
+      }
+      handleServerError(context, e);
+    } finally {
+      try {
+        response.getOutputStream().close();
+      } catch (IOException e) {
+        // Ignore
+      }
+    }
+  }
+
+  @Override
+  public void destroy() {
+
   }
 }

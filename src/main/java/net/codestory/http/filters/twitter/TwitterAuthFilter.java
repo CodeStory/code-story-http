@@ -22,7 +22,6 @@ import net.codestory.http.filters.*;
 import net.codestory.http.internal.*;
 import net.codestory.http.payload.*;
 
-import org.simpleframework.http.*;
 
 import twitter4j.*;
 import twitter4j.conf.*;
@@ -70,16 +69,16 @@ public class TwitterAuthFilter implements Filter {
       }
 
       return Payload.seeOther("/")
-          .withCookie(new Cookie("userId", user.id.toString(), "/", true))
-          .withCookie(new Cookie("screenName", user.screenName, "/", true))
-          .withCookie(new Cookie("userPhoto", user.imageUrl, "/", true));
+          .withCookie("userId", user.id.toString())
+          .withCookie("screenName", user.screenName)
+          .withCookie("userPhoto", user.imageUrl);
     }
 
     if (uri.equals(uriPrefix + "logout")) {
       return Payload.seeOther("/")
-          .withCookie(new Cookie("userId", "", "/", false))
-          .withCookie(new Cookie("screenName", "", "/", false))
-          .withCookie(new Cookie("userPhoto", "", "/", false));
+          .withCookie("userId", "")
+          .withCookie("screenName", "")
+          .withCookie("userPhoto", "");
     }
 
     String userId = context.cookieValue("userId");

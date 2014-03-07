@@ -20,12 +20,16 @@ import static org.mockito.Mockito.*;
 
 import net.codestory.http.injection.*;
 
+import org.assertj.core.util.Arrays;
 import org.junit.*;
-import org.simpleframework.http.*;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public class ContextTest {
-  Request request = mock(Request.class);
-  Response response = mock(Response.class);
+  HttpServletRequest request = mock(HttpServletRequest.class);
+  HttpServletResponse response = mock(HttpServletResponse.class);
   IocAdapter iocAdapter = mock(IocAdapter.class);
 
   Context context = new Context(request, response, iocAdapter);
@@ -46,7 +50,7 @@ public class ContextTest {
 
   @Test
   public void cookie_value() {
-    when(request.getCookie("name")).thenReturn(new Cookie("name", "value"));
+    when(request.getCookies()).thenReturn(Arrays.array(new Cookie("name", "value")));
 
     String value = context.cookieValue("name", "default");
 
@@ -55,7 +59,7 @@ public class ContextTest {
 
   @Test
   public void json_cookie_json_by_type() {
-    when(request.getCookie("name")).thenReturn(new Cookie("name", "{\"name\": \"Bob\", \"quantity\": 42}"));
+    when(request.getCookies()).thenReturn(Arrays.array(new Cookie("name", "{\"name\": \"Bob\", \"quantity\": 42}")));
 
     Order order = context.cookieValue("name", Order.class);
 
@@ -73,7 +77,7 @@ public class ContextTest {
 
   @Test
   public void json_cookie() {
-    when(request.getCookie("name")).thenReturn(new Cookie("name", "{\"name\": \"Joe\", \"quantity\": 12}"));
+    when(request.getCookies()).thenReturn(Arrays.array(new Cookie("name", "{\"name\": \"Joe\", \"quantity\": 12}")));
 
     Order order = context.cookieValue("name", new Order());
 

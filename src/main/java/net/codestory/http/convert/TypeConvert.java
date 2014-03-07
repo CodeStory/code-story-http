@@ -16,6 +16,7 @@
 package net.codestory.http.convert;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.*;
 
 import net.codestory.http.internal.*;
@@ -23,6 +24,7 @@ import net.codestory.http.internal.*;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
+import net.codestory.http.io.InputStreams;
 
 public class TypeConvert {
   private static ObjectMapper OBJECT_MAPPER = new ObjectMapper()
@@ -71,7 +73,7 @@ public class TypeConvert {
 
     String json;
     try {
-      json = context.request().getContent();
+      json = InputStreams.readString(context.request().getInputStream(), Charset.forName("UTF-8"));
     } catch (IOException e) {
       throw new IllegalArgumentException("Unable read request content", e);
     }
