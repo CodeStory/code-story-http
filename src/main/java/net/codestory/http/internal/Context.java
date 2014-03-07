@@ -18,6 +18,7 @@ package net.codestory.http.internal;
 import static net.codestory.http.constants.Headers.*;
 
 import java.io.*;
+import java.net.URLDecoder;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -44,7 +45,7 @@ public class Context {
   }
 
   public String uri() {
-    return request.getRequestURI();
+    return uriDecode(request.getRequestURI());
   }
 
   public Cookie cookie(String name) {
@@ -96,11 +97,11 @@ public class Context {
   }
 
   public String get(String name) {
-    return request.getParameter(name);
+    return uriDecode(request.getParameter(name));
   }
 
   public List<String> getAll(String name) {
-    return Arrays.asList(request.getParameterValues(name));
+    return Arrays.asList(request.getParameterValues(name)).stream().map(this::uriDecode).collect(Collectors.toList());
   }
 
   public int getInteger(String name) {
@@ -127,10 +128,19 @@ public class Context {
     return request.getMethod();
   }
 
+  private String uriDecode(String uri) {
+    try {
+      return URLDecoder.decode(uri, "UTF-8");
+    }
+    catch (UnsupportedEncodingException e) {
+      throw new IllegalStateException("UTF-8 not supported on your system", e);
+    }
+  }
+
   public Map<String, String> keyValues() {
     return Collections.list(request.getParameterNames()).stream().collect(Collectors.toMap(
             Function.identity(),
-            name -> request.getParameter(name)
+            name -> uriDecode(request.getParameter(name))
     ));
   }
 
