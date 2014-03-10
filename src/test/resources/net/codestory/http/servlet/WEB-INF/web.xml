@@ -1,0 +1,15 @@
+<web-app xmlns="http://java.sun.com/xml/ns/javaee" version="3.0">
+  <filter>
+    <filter-name>codestoryfilter</filter-name>
+    <filter-class>net.codestory.http.WebServer</filter-class>
+    <init-param>
+      <param-name>configClass</param-name>
+      <param-value>net.codestory.http.servlet.WebXmlConfig</param-value>
+    </init-param>
+  </filter>
+
+  <filter-mapping>
+    <filter-name>codestoryfilter</filter-name>
+    <url-pattern>*</url-pattern>
+  </filter-mapping>
+</web-app>
