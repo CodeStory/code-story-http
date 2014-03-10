@@ -29,12 +29,17 @@ import net.codestory.http.reload.*;
 import net.codestory.http.routes.*;
 import net.codestory.http.ssl.*;
 
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.*;
 
-import javax.net.ssl.*;
 import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -42,7 +47,6 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -98,7 +102,7 @@ public class WebServer implements Filter {
   }
 
   public WebServer startSSL(int port, Path pathCertificate, Path pathPrivateKey) {
-    SSLContext context;
+    SslContextFactory context;
     try {
       context = new SSLContextFactory().create(pathCertificate, pathPrivateKey);
     } catch (Exception e) {
@@ -107,11 +111,25 @@ public class WebServer implements Filter {
     return startWithContext(port, context);
   }
 
-  private WebServer startWithContext(int port, SSLContext context) {
+  private WebServer startWithContext(int port, SslContextFactory context) {
     try {
       this.port = Env.INSTANCE.overriddenPort(port);
 
-      server = new Server(this.port);
+      if (context == null) {
+        server = new Server(this.port);
+      } else {
+        server = new Server();
+
+        HttpConfiguration https = new HttpConfiguration();
+        https.addCustomizer(new SecureRequestCustomizer());
+
+        ServerConnector sslConnector = new ServerConnector(server,
+                new SslConnectionFactory(context, "http/1.1"),
+                new HttpConnectionFactory(https));
+        sslConnector.setPort(this.port);
+
+        server.addConnector(sslConnector);
+      }
 
       ServletContextHandler servletHandler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
       servletHandler.addFilter(new FilterHolder(this), "/*", EnumSet.of(DispatcherType.REQUEST));
