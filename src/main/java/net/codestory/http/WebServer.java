@@ -16,6 +16,8 @@
 package net.codestory.http;
 
 import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.*;
 import java.nio.file.Path;
 import java.util.*;
@@ -27,6 +29,7 @@ import net.codestory.http.misc.*;
 import net.codestory.http.payload.*;
 import net.codestory.http.reload.*;
 import net.codestory.http.routes.*;
+import net.codestory.http.servlet.WebServerConfig;
 import net.codestory.http.ssl.*;
 
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -203,7 +206,25 @@ public class WebServer implements Filter {
 
   @Override
   public void init(FilterConfig filterConfig) throws ServletException {
-    // TODO, call spec class no init routes of user.
+    String configClassName = filterConfig.getInitParameter("configClass");
+    if (configClassName == null) {
+      throw new IllegalArgumentException("Parameter configClass must be specified for the filter.");
+    }
+
+    try {
+      Class<?> configClass = Class.forName(configClassName);
+      Constructor<?> constructor = configClass.getConstructor();
+      Object configObject = constructor.newInstance();
+      if (!(configObject instanceof WebServerConfig)) {
+        throw new IllegalArgumentException(configClassName + " must implement WebServerConfig");
+      }
+      WebServerConfig webServerConfig = (WebServerConfig) configObject;
+      webServerConfig.configure(this);
+    } catch (ClassNotFoundException e) {
+      throw new IllegalArgumentException("Parameter configClass must be set with a class", e);
+    } catch (NoSuchMethodException|InvocationTargetException|InstantiationException|IllegalAccessException e) {
+      throw new IllegalArgumentException(configClassName + " must have a public constructor with no args", e);
+    }
   }
 
   @Override
