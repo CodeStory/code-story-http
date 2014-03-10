@@ -117,6 +117,7 @@ public class WebServer implements Filter {
   private WebServer startWithContext(int port, SslContextFactory context) {
     try {
       this.port = Env.INSTANCE.overriddenPort(port);
+      embedded = true;
 
       if (context == null) {
         server = new Server(this.port);
@@ -204,8 +205,13 @@ public class WebServer implements Filter {
     return new ErrorPage(payload, shownError).payload();
   }
 
+  private boolean embedded = false;
+
   @Override
   public void init(FilterConfig filterConfig) throws ServletException {
+    if (embedded) {
+      return;
+    }
     String configClassName = filterConfig.getInitParameter("configClass");
     if (configClassName == null) {
       throw new IllegalArgumentException("Parameter configClass must be specified for the filter.");
