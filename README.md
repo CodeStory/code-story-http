@@ -564,6 +564,58 @@ TODO
 
 TODO
 
+## Use in your application server
+
+If you don't like the embedded server, you can use any application server which support servlet filter.
+
+First exclude jetty in your pom.xml
+
+```xml
+<dependency>
+  <groupId>net.code-story</groupId>
+  <artifactId>http</artifactId>
+  <version>1.31</version>
+  <exclusions>
+    <exclusion>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-server</artifactId>
+    </exclusion>
+    <exclusion>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-servlet</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
+```
+
+Then declare the filter in your web.xml with your class for configuration :
+```xml
+<filter>
+  <filter-name>codestoryfilter</filter-name>
+  <filter-class>net.codestory.http.WebServer</filter-class>
+  <init-param>
+    <param-name>configClass</param-name>
+    <param-value>com.mycompany.ConfigClass</param-value>
+  </init-param>
+</filter>
+
+<filter-mapping>
+  <filter-name>codestoryfilter</filter-name>
+  <url-pattern>*</url-pattern>
+</filter-mapping>
+```
+
+The class pass throw the parameter configClass must implement WebServerConfig, here is an exemple :
+```java
+public class ConfigClass implements WebServerConfig {
+  @Override
+  public void configure(WebServer webServer) {
+    webServer.configure(routes ->
+            routes.get("/hello", "Hello World"));
+  }
+}
+```
+
 # Deploy on Maven Central
 
 Build the release:
@@ -596,7 +648,6 @@ Synchro to Maven Central is done hourly.
  + Cleanup Payload class. Make Payload immutable?
  + Auto reload meme sans les lambda avec capture de variables locales
  + Singletons qui utilise les annotations standards
- + Remplacer Simple par un Servlet Filter qui fonctionne par defaut sur un Jetty Http
  + Help use local storage
  + Add your own/reuse Servlet filters
  + Supporter les coffee et less pré-générés
