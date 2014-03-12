@@ -19,9 +19,9 @@ import static java.nio.charset.StandardCharsets.*;
 import static net.codestory.http.constants.Encodings.*;
 import static net.codestory.http.constants.Headers.*;
 import static net.codestory.http.constants.HttpStatus.NOT_FOUND;
+import static net.codestory.http.constants.HttpStatus.NOT_MODIFIED;
 import static net.codestory.http.constants.Methods.*;
 import static net.codestory.http.io.Strings.*;
-import static org.simpleframework.http.Status.NOT_MODIFIED;
 
 import java.io.*;
 import java.net.*;
@@ -37,8 +37,11 @@ import net.codestory.http.io.*;
 import net.codestory.http.misc.*;
 import net.codestory.http.templating.*;
 import net.codestory.http.types.*;
+import org.eclipse.jetty.server.Response;
 
-import org.simpleframework.http.*;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
+
 
 public class Payload {
   private final String contentType;
@@ -112,7 +115,9 @@ public class Payload {
   }
 
   public Payload withCookie(String name, String value) {
-    return withCookie(new Cookie(name, value, "/", true));
+    Cookie cookie = new Cookie(name, value);
+    cookie.setDomain("/");
+    return withCookie(cookie);
   }
 
   public Payload withCookie(String name, Object value) {
@@ -195,7 +200,7 @@ public class Payload {
   }
 
   public static Payload notModified() {
-    return new Payload(HttpStatus.NOT_MODIFIED);
+    return new Payload(NOT_MODIFIED);
   }
 
   public static Payload unauthorized(String realm) {
@@ -229,10 +234,11 @@ public class Payload {
   }
 
   public void writeTo(Context context) throws IOException {
-    Response response = context.response();
+    HttpServletResponse response = context.response();
 
-    headers.entrySet().forEach(entry -> response.setValue(entry.getKey(), entry.getValue()));
-    cookies.forEach(cookie -> response.setCookie(cookie));
+    headers.entrySet().forEach(entry ->
+            response.setHeader(entry.getKey(), entry.getValue()));
+    cookies.forEach(cookie -> response.addCookie(cookie));
 
     long lastModified = getLastModified();
     if (lastModified >= 0) {
@@ -241,20 +247,20 @@ public class Payload {
         response.setStatus(NOT_MODIFIED);
         return;
       }
-      response.setValue(LAST_MODIFIED, Dates.to_rfc_1123(lastModified));
+      response.setHeader(LAST_MODIFIED, Dates.to_rfc_1123(lastModified));
     }
 
     String uri = context.uri();
     byte[] data = getData(uri, context);
     if (data == null) {
-      response.setStatus(Status.getStatus(code));
+      response.setStatus(code);
       response.setContentLength(0);
       return;
     }
 
     String type = getContentType(uri);
-    response.setValue(CONTENT_TYPE, type);
-    response.setStatus(Status.getStatus(code));
+    response.setHeader(CONTENT_TYPE, type);
+    response.setStatus(code);
 
     if (HEAD.equals(context.method()) || (code == 204) || (code == 304) || ((code >= 100) && (code < 200))) {
       return;
@@ -266,11 +272,11 @@ public class Payload {
       response.setStatus(NOT_MODIFIED);
       return;
     }
-    response.setValue(ETAG, etag);
+    response.setHeader(ETAG, etag);
 
     String acceptEncoding = context.getHeader(ACCEPT_ENCODING);
     if ((acceptEncoding != null) && acceptEncoding.contains(GZIP)) {
-      response.setValue(CONTENT_ENCODING, GZIP);
+      response.setHeader(CONTENT_ENCODING, GZIP);
 
       GZIPOutputStream gzip = new GZIPOutputStream(response.getOutputStream());
       gzip.write(data);

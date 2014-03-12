@@ -197,9 +197,14 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.simpleframework</groupId>
-      <artifactId>simple</artifactId>
-      <version>5.1.6</version>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-server</artifactId>
+      <version>9.1.3.v20140225</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-servlet</artifactId>
+      <version>9.1.3.v20140225</version>
     </dependency>
     <dependency>
       <groupId>com.github.sommeri</groupId>
@@ -303,6 +308,12 @@
       <groupId>org.webjars</groupId>
       <artifactId>bootstrap</artifactId>
       <version>3.1.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-webapp</artifactId>
+      <version>9.1.3.v20140225</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

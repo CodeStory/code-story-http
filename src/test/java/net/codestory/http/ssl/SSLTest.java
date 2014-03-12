@@ -19,18 +19,23 @@ import java.net.*;
 import java.nio.file.*;
 import java.util.*;
 
+import com.jayway.restassured.RestAssured;
 import net.codestory.http.*;
 
 import org.junit.*;
 
 public class SSLTest {
   @Test
-  public void start_server() throws URISyntaxException {
+  public void start_server() throws URISyntaxException, InterruptedException {
     Path pathCertificate = resource("certificates/server.crt");
     Path pathPrivateKey = resource("certificates/server.der");
 
     WebServer webServer = new WebServer();
     webServer.startSSL(8183 + new Random().nextInt(1000), pathCertificate, pathPrivateKey);
+
+    RestAssured.useRelaxedHTTPSValidation();
+    RestAssured.get("https://localhost:" + webServer.port() + "/").then().statusCode(200);
+
   }
 
   private static Path resource(String name) throws URISyntaxException {

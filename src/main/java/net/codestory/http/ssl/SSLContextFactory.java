@@ -15,6 +15,8 @@
  */
 package net.codestory.http.ssl;
 
+import org.eclipse.jetty.util.ssl.SslContextFactory;
+
 import java.io.*;
 import java.nio.file.*;
 import java.security.*;
@@ -25,7 +27,8 @@ import java.security.spec.*;
 import javax.net.ssl.*;
 
 public class SSLContextFactory {
-  public SSLContext create(Path pathCertificate, Path pathPrivateKey) throws Exception {
+
+  public SslContextFactory create(Path pathCertificate, Path pathPrivateKey) throws Exception {
     X509Certificate cert = generateCertificateFromDER(Files.readAllBytes(pathCertificate));
     RSAPrivateKey key = generatePrivateKeyFromDER(Files.readAllBytes(pathPrivateKey));
 
@@ -37,7 +40,9 @@ public class SSLContextFactory {
     SSLContext context = SSLContext.getInstance("TLS");
     context.init(getKeyManagers(keystore), null, null);
 
-    return context;
+    SslContextFactory sslContextFactory = new SslContextFactory();
+    sslContextFactory.setSslContext(context);
+    return sslContextFactory;
   }
 
   private static KeyManager[] getKeyManagers(KeyStore keyStore) throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException {

@@ -63,7 +63,9 @@ public class StaticPagesTest extends AbstractWebServerTest {
 
   @Test
   public void private_files() {
-    get("/../private.txt").produces(404);
+    // Status 400 is handle by jetty himself
+    get("/../private.txt").produces(400);
+
     get("/_config.yaml").produces(404);
     get("/_layouts/layout.html").produces(404);
     get("/unknown").produces(404);
